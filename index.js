@@ -1,6 +1,5 @@
 console.log("application starting");
 import { promises as fs } from "fs";
-import { stringify } from "querystring";
 
 var states = [];
 var cities = [];
@@ -23,7 +22,26 @@ async function init() {
     //4
     fiveSmallestSates();
     //5
-    largestNameCity();
+    let largestNameList = [];
+    for (let i = 0; i < states.length; i++) {
+        let city = await largestNameCityByState(states[i].Sigla);
+        largestNameList.push(city);
+    }
+    console.log("5 -", "largest name list: ", largestNameList);
+
+    //6
+    let smallestNameList = [];
+    for (let i = 0; i < states.length; i++) {
+        let city = await smallestNameCityByState(states[i].Sigla);
+        smallestNameList.push(city);
+    }
+    console.log("6 -", "smallest name list: ", smallestNameList);
+
+    //7
+    console.log("7 -", "largest name city: ", largestNameCity(largestNameList));
+
+    //8
+    console.log("8 -", "smallest name city: ", smallestNameCity(smallestNameList));
 
     console.log("application ended");
 }
@@ -77,8 +95,7 @@ function fiveLargestSates() {
 
     let result = sortedList.slice(0, 5);
 
-    console.log("The five largest states:");
-    console.log(result);
+    console.log("3 - ", "The five largest states: ", result);
 }
 
 function fiveSmallestSates() {
@@ -86,22 +103,92 @@ function fiveSmallestSates() {
 
     let result = sortedList.slice(22, 27);
 
-    console.log("The five smallest states:");
-    console.log(result);
+    console.log("4 - ", "The five smallest states: ", result);
 }
 
-function largestNameCity() {
+async function largestNameCityByState(state) {
 
-    let sort = cities.sort((a, b) => {
-        b.Nome.length - a.Nome.length
+    let data = JSON.parse(await fs.readFile(`states/${state}.json`, "utf-8"));
+
+    let citiesSorted = data.cities.sort((a, b) => {
+        return a.Nome - b.Nome
     });
 
-    let sortedList = cities.sort((a, b) => b.Nome.length - a.Nome.length);
+    let cityName = '';
 
-    let result = sortedList.slice(0, 1);
-    console.log(sortedList);
-    console.log("The largest name city:");
-    console.log(result[0].Nome.length);
+    for (let i = 0; i < citiesSorted.length; i++) {
+        if (citiesSorted[i].Nome.length > cityName.length) {
+            cityName = citiesSorted[i].Nome;
+        }
+    }
+
+    return { name: cityName, lengthName: cityName.length, state: state };
+}
+
+async function smallestNameCityByState(state) {
+
+    let data = JSON.parse(await fs.readFile(`states/${state}.json`, "utf-8"));
+
+    let citiesSorted = data.cities.sort((a, b) => {
+        return a.Nome - b.Nome
+    });
+
+    let cityName = '';
+
+    for (let i = 0; i < citiesSorted.length; i++) {
+        if (cityName.length === 0 || citiesSorted[i].Nome.length < cityName.length) {
+            cityName = citiesSorted[i].Nome;
+        }
+    }
+
+    return { name: cityName, lengthName: cityName.length, state: state };
+}
+
+function largestNameCity(cities) {
+    let sorted = cities.sort((a, b) => {
+        if (a.name > b.name) {
+            return 1;
+        }
+        if (a.name < b.name) {
+            return -1;
+        }
+        // a must be equal to b
+        return 0;
+    });
+
+    let city;
+
+    for (let i = 0; i < sorted.length; i++) {
+        if (city === undefined || sorted[i].lengthName > city.lengthName) {
+            city = sorted[i];
+        }
+    }
+
+    return city;
+}
+
+function smallestNameCity(cities) {
+
+    let sorted = cities.sort((a, b) => {
+        if (a.name > b.name) {
+            return 1;
+        }
+        if (a.name < b.name) {
+            return -1;
+        }
+        // a must be equal to b
+        return 0;
+    });
+
+    let city;
+
+    for (let i = 0; i < sorted.length; i++) {
+        if (city === undefined || sorted[i].lengthName < city.lengthName) {
+            city = sorted[i];
+        }
+    }
+
+    return city;
 }
 
 init();
